@@ -6,7 +6,7 @@
 
 **Notation :** `#` précède chaque attribut appartenant à la clé primaire. Lorsqu'une relation comporte plusieurs attributs marqués `#`, ils forment ensemble une seule clé primaire composée ; ils ne sont pas uniques individuellement. `=> TABLE(attribut)` indique une clé étrangère vers l'attribut de la table référencée. `UNIQUE` indique une unicité supplémentaire et `NULL autorisé` une association facultative. `attribut : TYPE` indique le domaine de chaque attribut ; une clé étrangère a le même type que la clé qu'elle référence.
 
-**Types utilisés :** `INT` (entier), `DECIMAL(p,s)` (nombre décimal à `p` chiffres dont `s` après la virgule), `VARCHAR(n)` (chaîne d'au plus `n` caractères), `TEXT` (texte long), `DATE`, `DATETIME` (date et heure).
+**Types utilisés :** `INT` (entier), `DECIMAL(p,s)` (nombre décimal à `p` chiffres dont `s` après la virgule), `VARCHAR(n)` (chaîne d'au plus `n` caractères), `TEXT` (texte long), `DATE`, `TIMESTAMP` (date et heure, équivalent PostgreSQL du `DATETIME` de l'UML).
 
 ```text
 INCUBATEUR(
@@ -80,8 +80,7 @@ TRANSPORTEUR(
 
 CONTREPARTIE(
   #id_contrepartie : INT,
-  libelle : VARCHAR(100),
-  id_projet : INT => PROJET(id_projet)
+  libelle : VARCHAR(100)
 )
 
 CONTREPARTIE_NUMERIQUE(
@@ -100,7 +99,7 @@ CONTREPARTIE_PHYSIQUE(
 CONTRIBUTION(
   #pseudo : VARCHAR(30) => UTILISATEUR(pseudo),
   #id_projet : INT => PROJET(id_projet),
-  #date_heure : DATETIME,
+  #date_heure : TIMESTAMP,
   montant : DECIMAL(12,2),
   id_contrepartie : INT => CONTREPARTIE(id_contrepartie) {NULL autorisé}
 )
@@ -136,13 +135,85 @@ L'attribut dérivé `/montant_collecte` ne figure pas dans la relation PROJET : 
 - Accompagnement : un projet possède au plus un incubateur. Un incubateur peut accompagner plusieurs projets ou n'en accompagner aucun.
 - Équipe : chaque projet doit posséder au moins une ligne dans PARTICIPATION. Un membre peut participer à plusieurs projets ou à aucun. Le rôle dépend du couple membre / projet ; il n'est donc pas placé dans MEMBRE_EQUIPE.
 - Soutien institutionnel : une ONG peut soutenir plusieurs projets sociaux, et un projet social peut être soutenu par plusieurs ONG. La référence de SOUTIEN vers PROJET_SOCIAL exclut les projets technologiques et artistiques de cette association.
-- Contreparties : chaque contrepartie appartient à un unique projet. Un projet peut proposer plusieurs contreparties ou aucune. Chaque contrepartie physique possède exactement un transporteur partenaire ; un transporteur peut expédier plusieurs contreparties physiques ou aucune.
+- Contreparties : conformément au MCD corrigé, une contrepartie n'est pas directement associée à un projet ; elle n'est reliée aux projets qu'à travers les contributions qui la sélectionnent. Chaque contrepartie physique possède exactement un transporteur partenaire ; un transporteur peut expédier plusieurs contreparties physiques ou aucune.
 - Contributions : chaque contribution concerne exactement un utilisateur et un projet. Elle peut inclure au plus une contrepartie. Une même contrepartie peut être choisie dans plusieurs contributions.
-- Cohérence de la contrepartie : si une contribution sélectionne une contrepartie, le projet de cette contrepartie doit être celui de la contribution. Formellement, pour toute contribution `c` dont `id_contrepartie` est renseigné, la contrepartie `r` référencée doit vérifier `c.id_projet = r.id_projet`. Les clés étrangères simples ne suffisent pas à imposer cette égalité ; elle constitue une contrainte supplémentaire.
 - Avis : pour chaque ligne d'AVIS, il doit exister au moins une ligne de CONTRIBUTION ayant le même pseudo et le même projet. Cette contribution doit déjà exister au moment du dépôt de l'avis. L'utilisateur peut avoir contribué sans avoir choisi de contrepartie.
 - Montant collecté : pour chaque projet, le montant collecté est la somme des montants de ses contributions. Il vaut 0 en l'absence de contribution. Un projet dépasse son objectif lorsque cette somme est strictement supérieure à son objectif financier.
 
-Les contraintes portant sur plusieurs lignes ou plusieurs relations — présence d'au moins un membre, contribution préalable à un avis, cohérence de la contrepartie et partitions d'héritage — doivent être vérifiées en complément des clés et des contraintes de domaine. Leur réalisation sera précisée lors du passage au modèle physique. Elles doivent rester respectées après les insertions, modifications et suppressions, au plus tard à la validation de la transaction.
+Les contraintes portant sur plusieurs lignes ou plusieurs relations — présence d'au moins un membre, contribution préalable à un avis et partitions d'héritage — doivent être vérifiées en complément des clés et des contraintes de domaine. Elles sont exprimées en algèbre relationnelle dans la section 2.3. Elles doivent rester respectées après les insertions, modifications et suppressions, au plus tard à la validation de la transaction.
+
+#### 2.3. Contraintes en algèbre relationnelle
+
+**Notation :** `PROJECTION(R, a1, a2)`, `RESTRICTION(R, condition)`, `JOINTURE(R1, R2, condition)`, `UNION`, `INTERSECTION`, `DIFFERENCE`, `AGREGATION(R, regroupement, fonction)`, `⊆` (inclusion) et `∅` (relation vide).
+
+**Partition de l'héritage Projet.** Complétude — tout projet est d'au moins un type :
+
+```text
+PROJECTION(PROJET, id_projet) =
+    PROJECTION(PROJET_TECHNOLOGIQUE, id_projet)
+    UNION PROJECTION(PROJET_ARTISTIQUE, id_projet)
+    UNION PROJECTION(PROJET_SOCIAL, id_projet)
+```
+
+Exclusion mutuelle — aucun projet n'est de deux types à la fois :
+
+```text
+INTERSECTION(PROJECTION(PROJET_TECHNOLOGIQUE, id_projet), PROJECTION(PROJET_ARTISTIQUE, id_projet)) = ∅
+INTERSECTION(PROJECTION(PROJET_TECHNOLOGIQUE, id_projet), PROJECTION(PROJET_SOCIAL, id_projet)) = ∅
+INTERSECTION(PROJECTION(PROJET_ARTISTIQUE, id_projet), PROJECTION(PROJET_SOCIAL, id_projet)) = ∅
+```
+
+**Partition de l'héritage Contrepartie** (complétude puis exclusion mutuelle) :
+
+```text
+PROJECTION(CONTREPARTIE, id_contrepartie) =
+    PROJECTION(CONTREPARTIE_NUMERIQUE, id_contrepartie)
+    UNION PROJECTION(CONTREPARTIE_PHYSIQUE, id_contrepartie)
+
+INTERSECTION(PROJECTION(CONTREPARTIE_NUMERIQUE, id_contrepartie),
+             PROJECTION(CONTREPARTIE_PHYSIQUE, id_contrepartie)) = ∅
+```
+
+**Au moins un membre d'équipe par projet** (l'inclusion inverse découle de la clé étrangère de PARTICIPATION) :
+
+```text
+PROJECTION(PROJET, id_projet) = PROJECTION(PARTICIPATION, id_projet)
+```
+
+**Avis soumis à une contribution préalable.** Un utilisateur ne peut noter qu'un projet auquel il a contribué au plus tard le jour de l'avis :
+
+```text
+PROJECTION(AVIS, pseudo, id_projet) ⊆ PROJECTION(CONTRIBUTION, pseudo, id_projet)
+
+PROJECTION(AVIS, pseudo, id_projet) ⊆
+    PROJECTION(
+        RESTRICTION(
+            JOINTURE(AVIS, CONTRIBUTION,
+                     AVIS.pseudo = CONTRIBUTION.pseudo
+                     AND AVIS.id_projet = CONTRIBUTION.id_projet),
+            DATE(CONTRIBUTION.date_heure) <= AVIS.date_avis),
+        AVIS.pseudo, AVIS.id_projet)
+```
+
+**Attribut dérivé montant_collecte**, défini par une vue (0 pour un projet sans contribution) :
+
+```text
+vMontantCollecte =
+    AGREGATION(CONTRIBUTION, id_projet, SUM(montant) AS montant_collecte)
+    UNION
+    PROJECTION(
+        JOINTURE(DIFFERENCE(PROJECTION(PROJET, id_projet),
+                            PROJECTION(CONTRIBUTION, id_projet)),
+                 {montant_collecte = 0}),
+        id_projet, montant_collecte)
+```
+
+Un projet dépasse son objectif lorsqu'il appartient à :
+
+```text
+RESTRICTION(JOINTURE(PROJET, vMontantCollecte, PROJET.id_projet = vMontantCollecte.id_projet),
+            montant_collecte > objectif_financier)
+```
 
 Les comptes de connexion et les droits administrateur / utilisateur seront gérés par l'application Python dans un fichier de configuration local, conformément à l'organisation prévue. Ils n'ajoutent donc pas de relation au présent MLD. Le pseudo associé à chaque compte utilisateur devra correspondre à un utilisateur existant dans la base.
 
@@ -154,7 +225,7 @@ Nous avons choisi de conserver une table pour la classe mère et une table pour 
 
 Pour les projets, la table PROJET contient notamment le titre, la description et l'objectif financier. Les tables PROJET_TECHNOLOGIQUE, PROJET_ARTISTIQUE et PROJET_SOCIAL contiennent les informations propres à chaque type. Ce choix permet de rattacher les contributions, les avis et les membres d'équipe à une même table PROJET, quel que soit le type du projet. Le soutien des ONG est, lui, rattaché à PROJET_SOCIAL afin de respecter la règle selon laquelle seules les initiatives sociales peuvent en bénéficier.
 
-Nous appliquons le même principe aux contreparties. La table CONTREPARTIE contient les informations communes et le projet auquel elles appartiennent. Les tables CONTREPARTIE_NUMERIQUE et CONTREPARTIE_PHYSIQUE contiennent respectivement les informations sur le fichier et celles sur la livraison. Les contributions peuvent ainsi faire référence à une même table CONTREPARTIE, qu'il s'agisse d'une contrepartie numérique ou physique.
+Nous appliquons le même principe aux contreparties. La table CONTREPARTIE contient les informations communes. Les tables CONTREPARTIE_NUMERIQUE et CONTREPARTIE_PHYSIQUE contiennent respectivement les informations sur le fichier et celles sur la livraison. Les contributions peuvent ainsi faire référence à une même table CONTREPARTIE, qu'il s'agisse d'une contrepartie numérique ou physique.
 
 Cette solution évite de répéter les informations communes dans les tables de chaque type. Elle évite aussi de regrouper dans une seule table des attributs qui ne concernent pas tous les types, comme les frais de livraison pour une contrepartie numérique. En contrepartie, il faut effectuer une jointure entre la table mère et la table fille pour obtenir toutes les informations d'un projet ou d'une contrepartie. Il faut également vérifier que chaque projet et chaque contrepartie appartiennent à un seul type, comme le précise la NDC.
 
