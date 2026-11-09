@@ -85,7 +85,6 @@ Projet "*" -- "0..1" Incubateur : est accompagné par >
 Projet "0..*" -- "1..*" MembreEquipe : est porté par >
 (Projet, MembreEquipe) .. Participation
 ProjetSocial "0..*" -- "0..*" ONG : est soutenu par >
-Projet "1" -- "*" Contrepartie : propose >
 Projet "1" -- "*" Contribution : reçoit >
 Utilisateur "1" -- "*" Contribution : effectue >
 Contribution "*" -- "0..1" Contrepartie : inclut >
