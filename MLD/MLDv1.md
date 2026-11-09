@@ -4,111 +4,113 @@
 
 ### 1. Relations
 
-**Notation :** `#` précède chaque attribut appartenant à la clé primaire. Lorsqu'une relation comporte plusieurs attributs marqués `#`, ils forment ensemble une seule clé primaire composée ; ils ne sont pas uniques individuellement. `=> TABLE(attribut)` indique une clé étrangère vers l'attribut de la table référencée. `UNIQUE` indique une unicité supplémentaire et `NULL autorisé` une association facultative.
+**Notation :** `#` précède chaque attribut appartenant à la clé primaire. Lorsqu'une relation comporte plusieurs attributs marqués `#`, ils forment ensemble une seule clé primaire composée ; ils ne sont pas uniques individuellement. `=> TABLE(attribut)` indique une clé étrangère vers l'attribut de la table référencée. `UNIQUE` indique une unicité supplémentaire et `NULL autorisé` une association facultative. `attribut : TYPE` indique le domaine de chaque attribut ; une clé étrangère a le même type que la clé qu'elle référence.
+
+**Types utilisés :** `INT` (entier), `DECIMAL(p,s)` (nombre décimal à `p` chiffres dont `s` après la virgule), `VARCHAR(n)` (chaîne d'au plus `n` caractères), `TEXT` (texte long), `DATE`, `DATETIME` (date et heure).
 
 ```text
 INCUBATEUR(
-  #id_incubateur,
-  nom,
-  annee_creation,
-  budget_accompagnement
+  #id_incubateur : INT,
+  nom : VARCHAR(100),
+  annee_creation : INT,
+  budget_accompagnement : DECIMAL(12,2)
 )
 
 PROJET(
-  #id_projet,
-  titre,
-  description,
-  objectif_financier,
-  date_lancement,
-  id_incubateur => INCUBATEUR(id_incubateur) {NULL autorisé}
+  #id_projet : INT,
+  titre : VARCHAR(150),
+  description : TEXT,
+  objectif_financier : DECIMAL(12,2),
+  date_lancement : DATE,
+  id_incubateur : INT => INCUBATEUR(id_incubateur) {NULL autorisé}
 )
 
 PROJET_TECHNOLOGIQUE(
-  #id_projet => PROJET(id_projet),
-  type_innovation
+  #id_projet : INT => PROJET(id_projet),
+  type_innovation : VARCHAR(100)
 )
 
 PROJET_ARTISTIQUE(
-  #id_projet => PROJET(id_projet),
-  medium_principal
+  #id_projet : INT => PROJET(id_projet),
+  medium_principal : VARCHAR(100)
 )
 
 PROJET_SOCIAL(
-  #id_projet => PROJET(id_projet),
-  region_cible
+  #id_projet : INT => PROJET(id_projet),
+  region_cible : VARCHAR(100)
 )
 
 ONG(
-  #numero_enregistrement,
-  nom,
-  pays_origine
+  #numero_enregistrement : VARCHAR(30),
+  nom : VARCHAR(100),
+  pays_origine : VARCHAR(60)
 )
 
 SOUTIEN(
-  #id_projet => PROJET_SOCIAL(id_projet),
-  #numero_enregistrement => ONG(numero_enregistrement)
+  #id_projet : INT => PROJET_SOCIAL(id_projet),
+  #numero_enregistrement : VARCHAR(30) => ONG(numero_enregistrement)
 )
 
 MEMBRE_EQUIPE(
-  #id_membre,
-  nom,
-  prenom,
-  pays_residence,
-  date_naissance
+  #id_membre : INT,
+  nom : VARCHAR(60),
+  prenom : VARCHAR(60),
+  pays_residence : VARCHAR(60),
+  date_naissance : DATE
 )
 
 PARTICIPATION(
-  #id_projet => PROJET(id_projet),
-  #id_membre => MEMBRE_EQUIPE(id_membre),
-  role
+  #id_projet : INT => PROJET(id_projet),
+  #id_membre : INT => MEMBRE_EQUIPE(id_membre),
+  role : VARCHAR(20)
 )
 
 UTILISATEUR(
-  #pseudo,
-  email,
-  nom,
-  date_naissance
+  #pseudo : VARCHAR(30),
+  email : VARCHAR(255),
+  nom : VARCHAR(60),
+  date_naissance : DATE
 )
   UNIQUE : email
 
 TRANSPORTEUR(
-  #nom,
-  delai_livraison_moyen
+  #nom : VARCHAR(60),
+  delai_livraison_moyen : INT
 )
 
 CONTREPARTIE(
-  #id_contrepartie,
-  libelle,
-  id_projet => PROJET(id_projet)
+  #id_contrepartie : INT,
+  libelle : VARCHAR(100),
+  id_projet : INT => PROJET(id_projet)
 )
 
 CONTREPARTIE_NUMERIQUE(
-  #id_contrepartie => CONTREPARTIE(id_contrepartie),
-  format_fichier,
-  taille_mo
+  #id_contrepartie : INT => CONTREPARTIE(id_contrepartie),
+  format_fichier : VARCHAR(20),
+  taille_mo : DECIMAL(10,2)
 )
 
 CONTREPARTIE_PHYSIQUE(
-  #id_contrepartie => CONTREPARTIE(id_contrepartie),
-  poids_estime,
-  frais_livraison,
-  nom_transporteur => TRANSPORTEUR(nom)
+  #id_contrepartie : INT => CONTREPARTIE(id_contrepartie),
+  poids_estime : DECIMAL(8,2),
+  frais_livraison : DECIMAL(8,2),
+  nom_transporteur : VARCHAR(60) => TRANSPORTEUR(nom)
 )
 
 CONTRIBUTION(
-  #pseudo => UTILISATEUR(pseudo),
-  #id_projet => PROJET(id_projet),
-  #date_heure,
-  montant,
-  id_contrepartie => CONTREPARTIE(id_contrepartie) {NULL autorisé}
+  #pseudo : VARCHAR(30) => UTILISATEUR(pseudo),
+  #id_projet : INT => PROJET(id_projet),
+  #date_heure : DATETIME,
+  montant : DECIMAL(12,2),
+  id_contrepartie : INT => CONTREPARTIE(id_contrepartie) {NULL autorisé}
 )
 
 AVIS(
-  #pseudo => UTILISATEUR(pseudo),
-  #id_projet => PROJET(id_projet),
-  note,
-  avis_textuel,
-  date_avis
+  #pseudo : VARCHAR(30) => UTILISATEUR(pseudo),
+  #id_projet : INT => PROJET(id_projet),
+  note : INT,
+  avis_textuel : TEXT,
+  date_avis : DATE
 )
 ```
 
@@ -127,7 +129,7 @@ L'attribut dérivé `/montant_collecte` ne figure pas dans la relation PROJET : 
 - Montant : le montant d'une contribution est obligatoire et strictement supérieur à 0.
 - Note : la note d'un avis est obligatoire, entière et comprise entre 1 et 5.
 - Rôle : le rôle d'une participation est obligatoire et appartient à l'ensemble `{chefDeProjet, developpeur, designer, communityManager}`.
-- Types : les dates utilisent le domaine DATE, la date et heure d'une contribution le domaine DATETIME, les montants le domaine DECIMAL et les attributs entiers le domaine INT. Les attributs textuels conservent les domaines VARCHAR ou TEXT indiqués dans l'UML. Les identifiants ajoutés sont de type INT. Une clé étrangère possède le même domaine que la clé référencée.
+- Types : le type de chaque attribut est indiqué dans la relation (section 1). Les identifiants ajoutés sont de type INT. Une clé étrangère possède le même type que la clé référencée.
 
 #### 2.2. Associations et règles de gestion
 
