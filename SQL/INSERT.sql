@@ -66,6 +66,7 @@ INSERT INTO PARTICIPATION (id_projet, id_membre, role) VALUES
 (1, 2, 'designer'),          -- Yoji Shinkawa sur Projet 1
 (2, 3, 'chefDeProjet'),
 (3, 4, 'chefDeProjet'),
+(4, 4, 'chefDeProjet'),      -- chaque projet doit avoir au moins un membre
 (5, 3, 'developpeur'),
 (6, 4, 'chefDeProjet');
 
@@ -87,23 +88,23 @@ INSERT INTO TRANSPORTEUR (nom, delai_livraison_moyen) VALUES
 -- 7. CONTREPARTIES (Tables Mère + Filles)
 
 -- Contrepartie 1 : Numérique (Projet 1)
-INSERT INTO CONTREPARTIE (libelle, id_projet) VALUES ('Bande originale MP3/FLAC', 1);
+INSERT INTO CONTREPARTIE (libelle) VALUES ('Bande originale MP3/FLAC');
 INSERT INTO CONTREPARTIE_NUMERIQUE (id_contrepartie, format_fichier, taille_mo) VALUES (1, 'FLAC', 650.00);
 
 -- Contrepartie 2 : Physique (Projet 1) via Chronopost
-INSERT INTO CONTREPARTIE (libelle, id_projet) VALUES ('Artbook collector relié cuir', 1);
+INSERT INTO CONTREPARTIE (libelle) VALUES ('Artbook collector relié cuir');
 INSERT INTO CONTREPARTIE_PHYSIQUE (id_contrepartie, poids_estime, frais_livraison, nom_transporteur) VALUES (2, 2.50, 12.00, 'Chronopost');
 
 -- Contrepartie 3 : Physique (Projet 3) via La Poste
-INSERT INTO CONTREPARTIE (libelle, id_projet) VALUES ('Gourde écologique gravée', 3);
+INSERT INTO CONTREPARTIE (libelle) VALUES ('Gourde écologique gravée');
 INSERT INTO CONTREPARTIE_PHYSIQUE (id_contrepartie, poids_estime, frais_livraison, nom_transporteur) VALUES (3, 0.40, 5.00, 'La Poste - Colissimo');
 
 -- Contrepartie 4 : Physique (Projet 5) via Chronopost
-INSERT INTO CONTREPARTIE (libelle, id_projet) VALUES ('Kit Capteur EcoSens prêt à l''emploi', 5);
+INSERT INTO CONTREPARTIE (libelle) VALUES ('Kit Capteur EcoSens prêt à l''emploi');
 INSERT INTO CONTREPARTIE_PHYSIQUE (id_contrepartie, poids_estime, frais_livraison, nom_transporteur) VALUES (4, 0.80, 8.50, 'Chronopost');
 
 -- Contrepartie 5 : Numérique (Projet 5)
-INSERT INTO CONTREPARTIE (libelle, id_projet) VALUES ('Documentation PDF & Schémas 3D', 5);
+INSERT INTO CONTREPARTIE (libelle) VALUES ('Documentation PDF & Schémas 3D');
 INSERT INTO CONTREPARTIE_NUMERIQUE (id_contrepartie, format_fichier, taille_mo) VALUES (5, 'PDF', 45.00);
 
 -- 8. CONTRIBUTIONS
@@ -128,4 +129,5 @@ INSERT INTO CONTRIBUTION (pseudo, id_projet, date_heure, montant, id_contreparti
 INSERT INTO AVIS (pseudo, id_projet, note, avis_textuel, date_avis) VALUES
 ('rreis', 1, 5, 'Un chef-d''œuvre visuel et sonore exceptionnel !', '2025-01-25'),
 ('rreis', 3, 5, 'Projet fantastique et très transparent.', '2025-03-10'),
-('hgosse', 3, 4, 'Très belle initiative pour l''accès à l''eau.', '2025-03-12');
+('hgosse', 3, 4, 'Très belle initiative pour l''accès à l''eau.', '2025-03-12'),
+('jgomes', 3, 2, 'Bonne idée mais peu de nouvelles du projet.', '2025-03-15'); -- contribution de 30 €, ne doit pas compter dans la requête 2

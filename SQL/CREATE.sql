@@ -1,4 +1,5 @@
 -- Suppression des tables au cas elles existent déjà
+DROP VIEW IF EXISTS V_MONTANT_COLLECTE;
 DROP TABLE IF EXISTS AVIS CASCADE;
 DROP TABLE IF EXISTS CONTRIBUTION CASCADE;
 DROP TABLE IF EXISTS CONTREPARTIE_PHYSIQUE CASCADE;
@@ -151,12 +152,7 @@ CREATE TABLE TRANSPORTEUR (
 CREATE TABLE CONTREPARTIE (
     id_contrepartie INT GENERATED ALWAYS AS IDENTITY,
     libelle VARCHAR(100) NOT NULL,
-    id_projet INT NOT NULL,
-    CONSTRAINT PK_CONTREPARTIE PRIMARY KEY (id_contrepartie),
-    CONSTRAINT FK_CONTREPARTIE_PROJET FOREIGN KEY (id_projet)
-        REFERENCES PROJET(id_projet)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    CONSTRAINT PK_CONTREPARTIE PRIMARY KEY (id_contrepartie)
 );
 
 -- Table : CONTREPARTIE_NUMERIQUE (Spécialisation de CONTREPARTIE)
@@ -232,3 +228,12 @@ CREATE TABLE AVIS (
         ON UPDATE CASCADE,
     CONSTRAINT CHK_AVIS_NOTE CHECK (note BETWEEN 1 AND 5)
 );
+
+-- Vue : montant collecté par projet (attribut dérivé, pas stocké)
+-- 0 si le projet n'a reçu aucune contribution
+CREATE VIEW V_MONTANT_COLLECTE AS
+SELECT p.id_projet,
+       COALESCE(SUM(c.montant), 0) AS montant_collecte
+FROM PROJET p
+LEFT JOIN CONTRIBUTION c ON c.id_projet = p.id_projet
+GROUP BY p.id_projet;
