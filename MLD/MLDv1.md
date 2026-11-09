@@ -135,27 +135,26 @@ L'attribut dérivé `/montant_collecte` ne figure pas dans la relation PROJET : 
 - Accompagnement : un projet possède au plus un incubateur. Un incubateur peut accompagner plusieurs projets ou n'en accompagner aucun.
 - Équipe : chaque projet doit posséder au moins une ligne dans PARTICIPATION. Un membre peut participer à plusieurs projets ou à aucun. Le rôle dépend du couple membre / projet ; il n'est donc pas placé dans MEMBRE_EQUIPE.
 - Soutien institutionnel : une ONG peut soutenir plusieurs projets sociaux, et un projet social peut être soutenu par plusieurs ONG. La référence de SOUTIEN vers PROJET_SOCIAL exclut les projets technologiques et artistiques de cette association.
-- Contreparties : conformément au MCD corrigé, une contrepartie n'est pas directement associée à un projet ; elle n'est reliée aux projets qu'à travers les contributions qui la sélectionnent. Chaque contrepartie physique possède exactement un transporteur partenaire ; un transporteur peut expédier plusieurs contreparties physiques ou aucune.
+- Contreparties : depuis la correction du MCD, une contrepartie n'est plus reliée directement à un projet. Le lien passe par les contributions qui la choisissent. Chaque contrepartie physique possède exactement un transporteur partenaire ; un transporteur peut expédier plusieurs contreparties physiques ou aucune.
 - Contributions : chaque contribution concerne exactement un utilisateur et un projet. Elle peut inclure au plus une contrepartie. Une même contrepartie peut être choisie dans plusieurs contributions.
 - Avis : pour chaque ligne d'AVIS, il doit exister au moins une ligne de CONTRIBUTION ayant le même pseudo et le même projet. Cette contribution doit déjà exister au moment du dépôt de l'avis. L'utilisateur peut avoir contribué sans avoir choisi de contrepartie.
 - Montant collecté : pour chaque projet, le montant collecté est la somme des montants de ses contributions. Il vaut 0 en l'absence de contribution. Un projet dépasse son objectif lorsque cette somme est strictement supérieure à son objectif financier.
 
-Les contraintes portant sur plusieurs lignes ou plusieurs relations — présence d'au moins un membre, contribution préalable à un avis et partitions d'héritage — doivent être vérifiées en complément des clés et des contraintes de domaine. Elles sont exprimées en algèbre relationnelle dans la section 2.3. Elles doivent rester respectées après les insertions, modifications et suppressions, au plus tard à la validation de la transaction.
+Certaines contraintes portent sur plusieurs lignes ou plusieurs tables (au moins un membre par projet, contribution avant un avis, partitions d'héritage). Les clés et les contraintes de domaine ne suffisent pas pour les garantir, on les écrit donc en algèbre relationnelle dans la partie 2.3. Elles doivent rester vraies après chaque insertion, modification ou suppression, au plus tard à la validation de la transaction.
 
 #### 2.3. Contraintes en algèbre relationnelle
 
-**Notation :** `PROJECTION(R, a1, a2)`, `RESTRICTION(R, condition)`, `JOINTURE(R1, R2, condition)`, `UNION`, `INTERSECTION`, `DIFFERENCE`, `AGREGATION(R, regroupement, fonction)`, `⊆` (inclusion) et `∅` (relation vide).
+On utilise les opérateurs vus en cours : PROJECTION, RESTRICTION, JOINTURE, UNION, INTERSECTION et DIFFERENCE. ∅ désigne une relation vide.
 
-**Partition de l'héritage Projet.** Complétude — tout projet est d'au moins un type :
+Héritage de Projet : un projet est d'au moins un type (complétude)
 
 ```text
-PROJECTION(PROJET, id_projet) =
-    PROJECTION(PROJET_TECHNOLOGIQUE, id_projet)
-    UNION PROJECTION(PROJET_ARTISTIQUE, id_projet)
-    UNION PROJECTION(PROJET_SOCIAL, id_projet)
+PROJECTION(PROJET, id_projet) = PROJECTION(PROJET_TECHNOLOGIQUE, id_projet)
+                                UNION PROJECTION(PROJET_ARTISTIQUE, id_projet)
+                                UNION PROJECTION(PROJET_SOCIAL, id_projet)
 ```
 
-Exclusion mutuelle — aucun projet n'est de deux types à la fois :
+et il ne peut pas être de deux types en même temps (exclusion mutuelle)
 
 ```text
 INTERSECTION(PROJECTION(PROJET_TECHNOLOGIQUE, id_projet), PROJECTION(PROJET_ARTISTIQUE, id_projet)) = ∅
@@ -163,57 +162,31 @@ INTERSECTION(PROJECTION(PROJET_TECHNOLOGIQUE, id_projet), PROJECTION(PROJET_SOCI
 INTERSECTION(PROJECTION(PROJET_ARTISTIQUE, id_projet), PROJECTION(PROJET_SOCIAL, id_projet)) = ∅
 ```
 
-**Partition de l'héritage Contrepartie** (complétude puis exclusion mutuelle) :
+Héritage de Contrepartie : même principe avec les deux types
 
 ```text
-PROJECTION(CONTREPARTIE, id_contrepartie) =
-    PROJECTION(CONTREPARTIE_NUMERIQUE, id_contrepartie)
-    UNION PROJECTION(CONTREPARTIE_PHYSIQUE, id_contrepartie)
+PROJECTION(CONTREPARTIE, id_contrepartie) = PROJECTION(CONTREPARTIE_NUMERIQUE, id_contrepartie)
+                                            UNION PROJECTION(CONTREPARTIE_PHYSIQUE, id_contrepartie)
 
-INTERSECTION(PROJECTION(CONTREPARTIE_NUMERIQUE, id_contrepartie),
-             PROJECTION(CONTREPARTIE_PHYSIQUE, id_contrepartie)) = ∅
+INTERSECTION(PROJECTION(CONTREPARTIE_NUMERIQUE, id_contrepartie), PROJECTION(CONTREPARTIE_PHYSIQUE, id_contrepartie)) = ∅
 ```
 
-**Au moins un membre d'équipe par projet** (l'inclusion inverse découle de la clé étrangère de PARTICIPATION) :
+Chaque projet a au moins un membre d'équipe. L'inclusion dans l'autre sens est déjà assurée par la clé étrangère de PARTICIPATION.
 
 ```text
 PROJECTION(PROJET, id_projet) = PROJECTION(PARTICIPATION, id_projet)
 ```
 
-**Avis soumis à une contribution préalable.** Un utilisateur ne peut noter qu'un projet auquel il a contribué au plus tard le jour de l'avis :
+Un utilisateur ne peut laisser un avis que s'il a déjà contribué au projet, au plus tard le jour de l'avis.
 
 ```text
-PROJECTION(AVIS, pseudo, id_projet) ⊆ PROJECTION(CONTRIBUTION, pseudo, id_projet)
+R1 = JOINTURE(AVIS, CONTRIBUTION, AVIS.pseudo = CONTRIBUTION.pseudo AND AVIS.id_projet = CONTRIBUTION.id_projet)
+R2 = RESTRICTION(R1, DATE(CONTRIBUTION.date_heure) <= AVIS.date_avis)
 
-PROJECTION(AVIS, pseudo, id_projet) ⊆
-    PROJECTION(
-        RESTRICTION(
-            JOINTURE(AVIS, CONTRIBUTION,
-                     AVIS.pseudo = CONTRIBUTION.pseudo
-                     AND AVIS.id_projet = CONTRIBUTION.id_projet),
-            DATE(CONTRIBUTION.date_heure) <= AVIS.date_avis),
-        AVIS.pseudo, AVIS.id_projet)
+PROJECTION(AVIS, pseudo, id_projet) ⊆ PROJECTION(R2, AVIS.pseudo, AVIS.id_projet)
 ```
 
-**Attribut dérivé montant_collecte**, défini par une vue (0 pour un projet sans contribution) :
-
-```text
-vMontantCollecte =
-    AGREGATION(CONTRIBUTION, id_projet, SUM(montant) AS montant_collecte)
-    UNION
-    PROJECTION(
-        JOINTURE(DIFFERENCE(PROJECTION(PROJET, id_projet),
-                            PROJECTION(CONTRIBUTION, id_projet)),
-                 {montant_collecte = 0}),
-        id_projet, montant_collecte)
-```
-
-Un projet dépasse son objectif lorsqu'il appartient à :
-
-```text
-RESTRICTION(JOINTURE(PROJET, vMontantCollecte, PROJET.id_projet = vMontantCollecte.id_projet),
-            montant_collecte > objectif_financier)
-```
+Le montant collecté n'est pas stocké, on le calcule à partir des contributions (somme des montants par projet, 0 si le projet n'a reçu aucune contribution). Un projet a dépassé son objectif si ce montant est strictement supérieur à objectif_financier. Ce calcul sera fait avec une vue dans le SQL.
 
 Les comptes de connexion et les droits administrateur / utilisateur seront gérés par l'application Python dans un fichier de configuration local, conformément à l'organisation prévue. Ils n'ajoutent donc pas de relation au présent MLD. Le pseudo associé à chaque compte utilisateur devra correspondre à un utilisateur existant dans la base.
 
