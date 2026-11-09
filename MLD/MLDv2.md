@@ -180,6 +180,11 @@ R8 : Projection(AVIS, pseudo, id_projet) ⊆ Projection(Restriction(Jointure(AVI
 R9 : Restriction(CONTRIBUTION, montant ≤ 0) = ∅
 R10 : Restriction(AVIS, note < 1 ∨ note > 5) = ∅
 R11 : Restriction(PARTICIPATION, role ≠ 'chefDeProjet' ∧ role ≠ 'developpeur' ∧ role ≠ 'designer' ∧ role ≠ 'communityManager') = ∅
+R12 : Restriction(PROJET, objectif_financier ≤ 0) = ∅
+R13 : Restriction(INCUBATEUR, annee_creation < 1800 ∨ budget_accompagnement < 0) = ∅
+R14 : Restriction(TRANSPORTEUR, delai_livraison_moyen ≤ 0) = ∅
+R15 : Restriction(CONTREPARTIE_NUMERIQUE, taille_mo ≤ 0) = ∅
+R16 : Restriction(CONTREPARTIE_PHYSIQUE, poids_estime ≤ 0 ∨ frais_livraison < 0) = ∅
 ```
 
 ### 3. Héritage
