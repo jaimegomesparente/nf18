@@ -114,7 +114,6 @@ end note
 
 note bottom of Contribution
   montant > 0
-  La Contrepartie choisie doit être proposée par le Projet concerné
   Le triplet (utilisateur, projet, date_heure) est unique
 end note
 
