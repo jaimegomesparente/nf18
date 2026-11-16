@@ -22,7 +22,7 @@ CREATE TABLE INCUBATEUR (
     id_incubateur SERIAL PRIMARY KEY, -- Garantie l'unicité en incrementant automatiquement l'id par rapport à ce qui est déjà dans la BD
     nom VARCHAR(100) NOT NULL,
     annee_creation INT NOT NULL CHECK (annee_creation >= 1800),
-    budget_accompagnement NUMERIC(12, 2) NOT NULL CHECK (budget_accompagnement >= 0), 
+    budget_accompagnement NUMERIC(12, 2) NOT NULL CHECK (budget_accompagnement >= 0)
 );
 
 -- Table : PROJET (Classe mère abstraite)
@@ -43,22 +43,21 @@ CREATE TABLE PROJET_TECHNOLOGIQUE (
 
 -- Table : PROJET_ARTISTIQUE (Spécialisation de PROJET)
 CREATE TABLE PROJET_ARTISTIQUE (
-    id_projet SERIAL PRIMARY KEY REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE,
-    medium_principal VARCHAR(100) NOT NULL,
-        
+    id_projet INT PRIMARY KEY REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE,
+    medium_principal VARCHAR(100) NOT NULL
 );
 
 -- Table : PROJET_SOCIAL (Spécialisation de PROJET)
 CREATE TABLE PROJET_SOCIAL (
-    id_projet INT NOT NULL REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE,
-    region_cible VARCHAR(100) NOT NULL,
+    id_projet INT NOT NULL PRIMARY KEY REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE,
+    region_cible VARCHAR(100) NOT NULL
 );
 
 -- Table : ONG
 CREATE TABLE ONG (
     numero_enregistrement VARCHAR(30) PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
-    pays_origine VARCHAR(60) NOT NULL,
+    pays_origine VARCHAR(60) NOT NULL
 );
 
 -- Table : SOUTIEN (Association N:M entre PROJET_SOCIAL et ONG)
@@ -74,16 +73,15 @@ CREATE TABLE MEMBRE_EQUIPE (
     nom VARCHAR(60) NOT NULL,
     prenom VARCHAR(60) NOT NULL,
     pays_residence VARCHAR(60) NOT NULL,
-    date_naissance DATE NOT NULL,
+    date_naissance DATE NOT NULL
 );
 
 -- Table : PARTICIPATION (Classe-association entre PROJET et MEMBRE_EQUIPE)
 CREATE TABLE PARTICIPATION (
     id_projet INT NOT NULL REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE,
-    id_membre INT NOT NULL REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE,
+    id_membre INT NOT NULL REFERENCES MEMBRE_EQUIPE(id_membre) ON DELETE CASCADE ON UPDATE CASCADE,
     role VARCHAR(20) NOT NULL CHECK (role IN ('chefDeProjet', 'developpeur', 'designer', 'communityManager')),
-    PRIMARY KEY (id_projet, id_membre),
-   
+    PRIMARY KEY (id_projet, id_membre)
 );
 
 -- Table : UTILISATEUR
@@ -91,7 +89,7 @@ CREATE TABLE UTILISATEUR (
     pseudo VARCHAR(30) NOT NULL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     nom VARCHAR(60) NOT NULL,
-    date_naissance DATE NOT NULL,
+    date_naissance DATE NOT NULL
 );
 
 -- Table : TRANSPORTEUR
@@ -104,14 +102,13 @@ CREATE TABLE TRANSPORTEUR (
 CREATE TABLE CONTREPARTIE (
     id_contrepartie SERIAL PRIMARY KEY,
     libelle VARCHAR(100) NOT NULL,
-    id_projet INT NOT NULL REFERENCES PROJET(id_projet) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Table : CONTREPARTIE_NUMERIQUE (Spécialisation de CONTREPARTIE)
 CREATE TABLE CONTREPARTIE_NUMERIQUE (
     id_contrepartie INT NOT NULL PRIMARY KEY REFERENCES CONTREPARTIE(id_contrepartie) ON DELETE CASCADE ON UPDATE CASCADE,
     format_fichier VARCHAR(20) NOT NULL,
-    taille_mo NUMERIC(10, 2) NOT NULL CHECK (taille_mo > 0),
+    taille_mo NUMERIC(10, 2) NOT NULL CHECK (taille_mo > 0)
 );
 
 -- Table : CONTREPARTIE_PHYSIQUE (Spécialisation de CONTREPARTIE)
@@ -119,7 +116,7 @@ CREATE TABLE CONTREPARTIE_PHYSIQUE (
     id_contrepartie INT NOT NULL PRIMARY KEY REFERENCES CONTREPARTIE(id_contrepartie) ON DELETE CASCADE ON UPDATE CASCADE,
     poids_estime NUMERIC(8, 2) NOT NULL CHECK (poids_estime > 0),
     frais_livraison NUMERIC(8, 2) NOT NULL CHECK (frais_livraison >= 0),
-    nom_transporteur VARCHAR(60) NOT NULL REFERENCES TRANSPORTEUR(nom) ON DELETE RESTRICT ON UPDATE CASCADE,
+    nom_transporteur VARCHAR(60) NOT NULL REFERENCES TRANSPORTEUR(nom) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- Table : CONTRIBUTION
@@ -129,7 +126,7 @@ CREATE TABLE CONTRIBUTION (
     date_heure TIMESTAMP NOT NULL,
     montant NUMERIC(12, 2) NOT NULL CHECK (montant > 0),
     id_contrepartie INT REFERENCES CONTREPARTIE(id_contrepartie) ON DELETE SET NULL ON UPDATE CASCADE,
-    PRIMARY KEY (pseudo, id_projet, date_heure),
+    PRIMARY KEY (pseudo, id_projet, date_heure)
 );
 
 -- Table : AVIS
@@ -139,5 +136,7 @@ CREATE TABLE AVIS (
     note INT NOT NULL CHECK (note BETWEEN 1 AND 5),
     avis_textuel TEXT NOT NULL,
     date_avis DATE NOT NULL,
-    PRIMARY KEY (pseudo, id_projet), 
+    PRIMARY KEY (pseudo, id_projet)
+
+
 );
