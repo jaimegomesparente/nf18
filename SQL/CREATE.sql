@@ -137,6 +137,12 @@ CREATE TABLE AVIS (
     avis_textuel TEXT NOT NULL,
     date_avis DATE NOT NULL,
     PRIMARY KEY (pseudo, id_projet)
-
-
 );
+
+-- Vue : montant collecté par projet (nécessaire pour la premiere requete du sujet, "somme des contributions > objectif")
+CREATE VIEW V_MONTANT_COLLECTE AS 
+    SELECT p.id_projet, 
+            COALESCE(SUM(c.montant), 0) AS montant_collecte 
+    FROM PROJET p
+    LEFT JOIN CONTRIBUTION c ON c.id_projet = p.id_projet
+    GROUP BY p.id_projet;
