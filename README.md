@@ -23,3 +23,8 @@ Le projet est organisé selon l'arborescence suivante afin de séparer les diff�
 -  `SQL/` : Scripts de création des tables, d'insertion et requêtes SQL.
 -  `Application/` : Fichiers et scripts relatifs au développement de l'application cliente.
 -  `NoSQL/` : Modélisation et requêtes pour la partie base de données orientée documents/graphes.
+
+## Note sur l'utilisation de l'IA.
+Lors de la réalisation du projet, nous avons utilisé l'IA à plusieurs reprises, pour simplifier les tâches répétitives:
+- Ecriture d'insert sql à partir d'un exemple écrit à la main : " A partir de cet exemple d'insert, donne nous en d'autres afin de compléter notre base de données"
+- Recherche d'erreurs de syntaxe ou d'orthographe dans nos différents fichiers : " Recherche et liste nous les éventuelles erreurs de syntaxe ou d'orthographe qui pourraient rendre difficile la compréhension, l'utilisation ou le fonctionnement de l'application."
