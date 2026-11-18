@@ -31,6 +31,27 @@ def se_connecter(conn, comptes):
         print(f"Connexion en tant que : {identifiant} ({compte['role']}) !")
         return {"identifiant": identifiant, **compte}
 
+def voir_projets(conn):
+    cur = conn.cursor()
+    cur.execute("""SELECT p.id_projet, p.titre, p.objectif_financier, v.montant_collecte FROM PROJET p JOIN V_MONTANT_COLLECTE v ON v.id_projet = p.id_projet ORDER BY p.id_projet""")
+    lignes = cur.fetchall()
+    cur.close()
+    print("\nId | Titre | Objectif | Collecté")
+    for id_projet, titre, objectif, collecte in lignes:
+        print(f"{id_projet} | {titre} | {objectif} € | {collecte} €")
+
+def contribuer(conn, pseudo):
+    voir_projets(conn)
+    id_projet = int(input("Id du projet : "))
+    montant = float(input("Montant (€) : "))
+    contrepartie = input("Id de la contrepartie (Entrée pour aucune) : ").strip()
+    id_contrepartie = int(contrepartie) if contrepartie else None
+    cur = conn.cursor()
+    cur.execute("""INSERT INTO CONTRIBUTION (pseudo, id_projet, date_heure, montant, id_contrepartie) VALUES (%s, %s, NOW(), %s, %s)""", (pseudo, id_projet, montant, id_contrepartie))
+    conn.commit()
+    cur.close()
+    print("Contribution enregistrée.")
+
 def menu_utilisateur(conn, compte):
     while True:
         print(f"\n===== CrowdFundr - {compte['pseudo']} =====")
@@ -43,7 +64,11 @@ def menu_utilisateur(conn, compte):
 
         if choix == "0":
             return
-        elif choix in ("1", "2", "3", "4"):
+        elif choix == "1":
+            voir_projets(conn)
+        elif choix == "3":
+            contribuer(conn, compte["pseudo"])
+        elif choix in ("2", "4"):
             print("A RAJOUTER")
         else:
             print("Invalide")
