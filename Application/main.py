@@ -73,6 +73,26 @@ def menu_utilisateur(conn, compte):
         else:
             print("Invalide")
 
+def supprimer_projet(conn):
+    voir_projets(conn)
+    id_projet = int(input("Id du projet à supprimer : "))
+    cur = conn.cursor()
+    cur.execute("DELETE FROM PROJET WHERE id_projet = %s", (id_projet,))
+    conn.commit()
+    cur.close()
+    print("Projet supprimé.")
+
+def ajouter_membre(conn):
+    nom = input("Nom : ")
+    prenom = input("Prénom : ")
+    pays = input("Pays de résidence : ")
+    date_naissance = input("Date de naissance (AAAA-MM-JJ) : ")
+    cur = conn.cursor()
+    cur.execute("INSERT INTO MEMBRE_EQUIPE (nom, prenom, pays_residence, date_naissance) VALUES (%s, %s, %s, %s)", (nom, prenom, pays, date_naissance))
+    conn.commit()
+    cur.close()
+    print("Membre ajouté.")
+
 def menu_admin(conn):
     while True:
         print("\n===== CrowdFundr - Administration =====")
@@ -86,7 +106,11 @@ def menu_admin(conn):
 
         if choix == "0":
             return
-        elif choix in ("1", "2", "3", "4", "5"):
+        elif choix == "1":
+            supprimer_projet(conn)
+        elif choix == "2":
+            ajouter_membre(conn)
+        elif choix in ("3", "4", "5"):
             print("A RAJOUTER")
         else:
             print("Invalide")
